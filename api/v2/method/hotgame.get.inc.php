@@ -70,7 +70,7 @@ if (!empty($_POST)) {
     $hotgame = new hotgame($dbo);
     $hotgame->setRequestFrom($accountId);
     
-    $result = $hotgame->get($itemId, $lat, $lng, $distance,$sex, $sex_orientation, $liked, $matches,$minage,$maxage);
+    $result = $hotgame->get($itemId, $lat, $lng, $distance,$sex, $sex_orientation, $liked, $matches,$minage,$maxage,$accountId);
    
     echo json_encode($result);
     exit;

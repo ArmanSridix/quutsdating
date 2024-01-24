@@ -27,7 +27,7 @@ class hotgame extends db_connect
         return $number_of_rows = $stmt->fetchColumn();
     }
 
-    public function get($itemId, $lat, $lng, $distance = 1000, $sex = 2, $sexOrientation = 0, $liked = 1, $matches = 1, $minage = 0 ,$maxage = 0 )
+    public function get($itemId, $lat, $lng, $distance = 1000, $sex = 2, $sexOrientation = 0, $liked = 1, $matches = 1, $minage = 0 ,$maxage = 0,$user_id = 0 )
     {
         $result = array(
             "error" => false,
@@ -84,24 +84,33 @@ class hotgame extends db_connect
         }
 
         $sql = "SELECT id, lat, lng, 3956 * 2 *
-                    ASIN(SQRT( POWER(SIN(($origLat - lat)*pi()/180/2),2)
-                    +COS($origLat*pi()/180 )*COS(lat*pi()/180)
-                    *POWER(SIN(($origLon-lng)*pi()/180/2),2)))
-                    as distance FROM $tableName WHERE
-                    lng between ($origLon-$dist/cos(radians($origLat))*69)
-                    and ($origLon+$dist/cos(radians($origLat))*69)
-                    and lat between ($origLat-($dist/69))
-                    and ($origLat+($dist/69))
-                    and (id < $itemId)
-                    and (id <> $this->requestFrom)
-                    $sex_sql
-                    $sex_orientation_sql
-                    $minage_sql
-                    $maxage_sql
+        ASIN(SQRT( POWER(SIN(($origLat - lat)*pi()/180/2),2)
+        +COS($origLat*pi()/180 )*COS(lat*pi()/180)
+        *POWER(SIN(($origLon-lng)*pi()/180/2),2)))
+        as distance FROM $tableName 
+        WHERE lng between ($origLon-$dist/cos(radians($origLat))*69)
+        and ($origLon+$dist/cos(radians($origLat))*69)
+        -- and lat between ($origLat-($dist/69))
+        and ($origLat+($dist/69))
+        and (id < $itemId)
+        and (id <> $this->requestFrom)
+        $sex_sql
+        $sex_orientation_sql
+        $minage_sql
+        $maxage_sql
+        
+        and (state = 0)
+        and id NOT IN (
+            SELECT blockedUserId
+            FROM profile_blacklist
+            WHERE blockedByUserId = $user_id
+        )
+        and fullname IS NOT NULL
+        and dob IS NOT NULL
 
-                    and (lowPhotoUrl <> '')
-                    and (state = 0)
-                    having distance < $dist ORDER BY id DESC LIMIT 20";
+        
+        ORDER BY id DESC LIMIT 20";
+
 
                     // print_r($sql);die;
 

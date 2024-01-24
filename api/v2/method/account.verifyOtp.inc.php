@@ -30,10 +30,8 @@ if (!empty($_POST)) {
     $phoneNumber = helper::clearText($phoneNumber);
     $phoneNumber = helper::escapeText($phoneNumber);
 
-
     $sessionKey = 'otp_' . $phoneNumber;
     $storedOTP = isset($_SESSION[$sessionKey]) ? $_SESSION[$sessionKey] : '';
-
 
     $ip_addr = helper::ip_addr();
     $currentTime = time();
@@ -61,37 +59,38 @@ if (!empty($_POST)) {
         }
 
         $checkQuery = "SELECT users.*, access_data.accessToken
-               FROM users 
-               JOIN access_data ON users.id = access_data.accountId 
-               WHERE users.phone = '$phoneNumber'";
-
+        FROM users 
+        JOIN access_data ON users.id = access_data.accountId 
+        WHERE users.phone = '$phoneNumber'";
         $checkResult = $conn->query($checkQuery);
 
-        
 
         if ($checkResult->num_rows > 0) {
-            // Phone number already exists in the database
             $userInfo = $checkResult->fetch_assoc();
-
+        
+            if ($userInfo['fullname'] == null && $userInfo['dob'] == null) {
+                $result = array(
+                    "error" => false,
+                    "user_info" => "Name and Dob is empty"
+                );
+               
+                
+            }
+        
+            // Phone number already exists in the database
+            if ($userInfo['fullname'] != null && $userInfo['dob'] != null) {
             $result = array(
                 "error" => false,
                 "user_info" => $userInfo
             );
-        } else {
+        }
+           
+        }
+        
+        
+        else {
             $insertQuery = "INSERT INTO users (phone,otpVerified,ip_addr,accountPostModerateAt) VALUES ('$phoneNumber',1,'$ip_addr','$accountPostModerateAt')";
             $conn->query($insertQuery);
-
-            if ($conn->query($insertQuery) === TRUE) {
-                $result = array(
-                    "error" => false,
-                    "message" => "OTP verification successful",
-                    
-                    
-                );
-            } else {
-                // Handle the error
-                echo "Error: " . $insertQuery . "<br>" . $conn->error;
-            }
             
             // Getting the last inserted ID
             $accountId = $conn->insert_id;
