@@ -881,33 +881,59 @@ class profile extends db_connect
 
         // $stmt = $this->db->prepare("SELECT * FROM profile_likes WHERE fromUserId = (:fromUserId) AND id < (:itemId) AND removeAt = 0 ORDER BY id DESC LIMIT 20");
 
-        $stmt = $this->db->prepare("
-        SELECT *,
-            CASE 
-                WHEN fromUserId = (:fromUserId) THEN 'profile_i_liked'
-                WHEN toUserId = (:toUserId) THEN 'match_request'
-                ELSE 'Unknown' -- Adjust this based on your requirements
-            END AS requestType
-        FROM profile_likes 
-        WHERE 
-            (
+    //     $stmt = $this->db->prepare("
+    //     SELECT *,
+    //         CASE 
+    //             WHEN fromUserId = (:fromUserId) THEN 'profile_i_liked'
+    //             WHEN toUserId = (:toUserId) THEN 'match_request'
+    //             ELSE 'Unknown' -- Adjust this based on your requirements
+    //         END AS requestType
+    //     FROM profile_likes 
+    //     WHERE 
+    //         (
 
                 
-            (fromUserId = (:fromUserId) AND (select count(id) from matches where u_match = fromUserId AND u_matchTo = toUserId )<=0)
+    //         (fromUserId = (:fromUserId) AND (select count(id) from matches where u_match = fromUserId AND u_matchTo = toUserId )<=0)
 
 
-            OR 
+    //         OR 
 
-            (toUserId = (:toUserId))
+    //         (toUserId = (:toUserId))
             
-            )
+    //         )
 
-            AND id < (:itemId) AND removeAt = 0
+    //         AND id < (:itemId) AND removeAt = 0
 
 
-        ORDER BY id DESC
-        LIMIT 20
-    ");
+    //     ORDER BY id DESC
+    //     LIMIT 20
+    // ");
+
+    $stmt = $this->db->prepare("
+            SELECT *,
+                CASE 
+                    WHEN fromUserId = (:fromUserId) THEN 'profile_i_liked'
+                    WHEN toUserId = (:toUserId) THEN 'match_request'
+                    ELSE 'Unknown' -- Adjust this based on your requirements
+                END AS requestType
+            FROM profile_likes 
+            WHERE 
+                (
+                    (fromUserId = (:fromUserId) AND (SELECT COUNT(id) FROM matches WHERE u_match = fromUserId AND u_matchTo = toUserId) <= 0)
+                    OR 
+                    (toUserId = (:toUserId))
+                )
+                AND id < (:itemId) AND removeAt = 0
+                AND (
+                    SELECT count(id)
+                    FROM profile_blacklist
+                    WHERE (blockedByUserId = fromUserId  AND blockedUserId = toUserId ) OR (blockedByUserId = toUserId  AND blockedUserId = fromUserId )
+                ) <=0
+
+
+            ORDER BY id DESC
+            LIMIT 20
+        ");
     
 
 // print_r($stmt);die;
