@@ -27,7 +27,7 @@ class hotgame extends db_connect
         return $number_of_rows = $stmt->fetchColumn();
     }
 
-    public function get($itemId, $lat, $lng, $distance = 1000, $sex = 2, $sexOrientation = 0, $liked = 1, $matches = 1, $minage = 0 ,$maxage = 0,$user_id = 0 )
+    public function get($itemId, $lat, $lng, $distance = 3000, $sex = 3, $sexOrientation = 0, $liked = 1, $matches = 1, $minage = 0 ,$maxage = 0 , $location = 0 ,$user_id=0)
     {
         $result = array(
             "error" => false,
@@ -67,7 +67,7 @@ class hotgame extends db_connect
 
         if ($minage == 0) {
 
-            $minage = "";
+            $minage_sql = "";
 
         } else {
 
@@ -76,12 +76,69 @@ class hotgame extends db_connect
 
         if ($maxage == 0) {
 
-            $maxage = "";
+            $maxage_sql = "";
 
         } else {
 
             $maxage_sql = " and (u_age <= {$maxage}) ";
         }
+
+        
+
+        if (!$location) {
+
+            $location_sql = "";
+
+        } else {
+
+            $location_sql = " and (location = '{$location}') ";
+        }
+
+        // $sql = "SELECT id, lat, lng, 3956 * 2 *
+        //             ASIN(SQRT( POWER(SIN(($origLat - lat)*pi()/180/2),2)
+        //             +COS($origLat*pi()/180 )*COS(lat*pi()/180)
+        //             *POWER(SIN(($origLon-lng)*pi()/180/2),2)))
+        //             as distance FROM $tableName WHERE
+        //             lng between ($origLon-$dist/cos(radians($origLat))*69)
+        //             and ($origLon+$dist/cos(radians($origLat))*69)
+        //             and lat between ($origLat-($dist/69))
+        //             and ($origLat+($dist/69))
+        //             and (id < $itemId)
+        //             and (id <> $this->requestFrom)
+        //             $sex_sql
+        //             $sex_orientation_sql
+        //             $minage_sql
+        //             $maxage_sql
+        //             $location_sql
+
+        //             and (lowPhotoUrl <> '')
+        //             and (state = 0)
+        //             having distance < $dist ORDER BY id DESC LIMIT 20";
+
+        // $sql = "SELECT id, lat, lng, 3956 * 2 *
+        // ASIN(SQRT( POWER(SIN(($origLat - lat)*pi()/180/2),2)
+        // +COS($origLat*pi()/180 )*COS(lat*pi()/180)
+        // *POWER(SIN(($origLon-lng)*pi()/180/2),2)))
+        // as distance FROM $tableName 
+        // WHERE lng between ($origLon-$dist/cos(radians($origLat))*69)
+        // and ($origLon+$dist/cos(radians($origLat))*69)
+        // and lat between ($origLat-($dist/69))
+        // and ($origLat+($dist/69))
+        // and (id < $itemId)
+        // and (id <> $this->requestFrom)
+        // $sex_sql
+        // $sex_orientation_sql
+        // $minage_sql
+        // $maxage_sql
+        // and (lowPhotoUrl <> '')
+        // and (state = 0)
+        // and id NOT IN (
+        //     SELECT blockedUserId
+        //     FROM profile_blacklist
+        //     WHERE blockedByUserId = $user_id
+        // )
+        // having distance < $dist 
+        // ORDER BY id DESC LIMIT 20";
 
         $sql = "SELECT id, lat, lng, 3956 * 2 *
         ASIN(SQRT( POWER(SIN(($origLat - lat)*pi()/180/2),2)
@@ -105,6 +162,11 @@ class hotgame extends db_connect
             FROM profile_blacklist
             WHERE blockedByUserId = $user_id
         )
+        and id NOT IN (
+            SELECT toUserId
+            FROM profile_likes
+            WHERE fromUserId = $user_id
+        )
         and fullname IS NOT NULL
         and dob IS NOT NULL
 
@@ -123,7 +185,6 @@ class hotgame extends db_connect
             if ($stmt->rowCount() > 0) {
 
                 while ($row = $stmt->fetch()) {
-                    
 
                     $profile = new profile($this->db, $row['id']);
                     $profile->setRequestFrom($this->requestFrom);
